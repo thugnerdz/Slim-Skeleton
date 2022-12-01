@@ -1,7 +1,17 @@
+# Meta
 .idea/
 .vscode/
+
+# Tests
 /coverage/
+
+# Dependencies
 /vendor/
+
+# Temp
 /logs/*
 !/logs/README.md
 .phpunit.result.cache
+
+# Environmeant
+.env

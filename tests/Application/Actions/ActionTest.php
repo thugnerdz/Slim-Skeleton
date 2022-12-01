@@ -6,9 +6,11 @@ namespace Tests\Application\Actions;
 
 use App\Application\Actions\Action;
 use App\Application\Actions\ActionPayload;
+use App\Domain\DomainException\DomainRecordNotFoundException;
 use DateTimeImmutable;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
+use Slim\Exception\HttpNotFoundException;
 use Tests\TestCase;
 
 class ActionTest extends TestCase
@@ -75,5 +77,35 @@ class ActionTest extends TestCase
         $response = $app->handle($request);
 
         $this->assertEquals(202, $response->getStatusCode());
+    }
+
+    public function testActionThrowsHttpNotFoundException()
+    {
+        $app = $this->getAppInstance();
+        $container = $app->getContainer();
+        $logger = $container->get(LoggerInterface::class);
+
+        $testAction = new class ($logger) extends Action {
+            public function __construct(
+                LoggerInterface $loggerInterface
+            ) {
+                parent::__construct($loggerInterface);
+            }
+
+            public function action(): Response
+            {
+                throw new DomainRecordNotFoundException('All of your base are belong to us.');
+            }
+        };
+
+        $app->get('/test-action-response-code', $testAction);
+        $request = $this->createRequest('GET', '/test-action-response-code');
+
+        $exception = new HttpNotFoundException($request, 'All of your base are belong to us.');
+
+        // echo json_encode($exception);
+        $this->expectExceptionObject($exception);
+
+        $app->handle($request);
     }
 }
